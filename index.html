@@ -192,6 +192,7 @@ function nx(){if(S.i<S.L.length-1)S.i++;else S.pal=1;render()}
 async function submit(){clearInterval(tk);const s=S;let c=0,w=0;s.L.forEach((q,j)=>{if(s.ans[j]==null)return;const ok=s.ans[j]==q.a;ok?c++:w++;rec(q.id,ok)});const n=s.L.length;
 if(s.ty)P.ts[s.ty]=Math.round(c*100/n);P.hist.unshift({n:s.ti,d:new Date().toLocaleDateString('hi-IN'),c,w,n_:n});P.hist=P.hist.slice(0,30);sv();
 let rk=null;
+if(!s.live&&U&&/@student\.mptet$/.test(U.email||'')){rk=await stSave(s,c,w,n)}
 if(s.live){const who=P.name||'विद्यार्थी';
  const ins=await db.from('test_attempts').insert({did:P.did,who,ty:'live-'+s.live,score:c,correct:c,wrong:w,secs:(s.tot||n*60)-s.left});
  if(ins.error)alert('रिज़ल्ट सेव नहीं हुआ: '+ins.error.message);
@@ -200,7 +201,7 @@ go('rs',{r:s,g:'all',rk})}
 function grp(r){const g={all:[],ok:[],no:[],sk:[],sl:[],nr:[]};r.L.forEach((q,j)=>{g.all.push(j);if(r.ans[j]==null)(r.vs[j]?g.sk:g.nr).push(j);else(r.ans[j]==q.a?g.ok:g.no).push(j);if((r.qt[j]||0)>=90)g.sl.push(j)});return g}
 function pg(){const r=X.r,g=grp(r)[X.g];const sel={};g.forEach((j,k)=>{if(r.ans[j]!=null)sel[k]=r.ans[j]});S={m:'pr',L:g.map(j=>r.L[j]),i:0,sel,ti:'समीक्षा',rv:1};go('pl')}
 function rs(){const r=X.r,g=grp(r),n=r.L.length,a=g.ok.length*100/n,b=a+g.no.length*100/n,T={all:'सभी',ok:'सही',no:'गलत',sk:'छोड़े',sl:'धीमे',nr:'नहीं पहुँचे'},at=g.ok.length+g.no.length;
-return`<h1>रिज़ल्ट</h1>${X.rk?`<div class="cd ctr"><b>आपकी रैंक: ${X.rk.rnk} / ${X.rk.total}</b></div>`:'<div class="mu">रैंक सिर्फ़ Live Test में बनती है। यह प्रैक्टिस टेस्ट आपके फ़ोन में सेव है।</div>'}${X.r.live?`<button class="w" onclick="LB()">लीडरबोर्ड देखें</button>`:''}<div class="cd ctr"><div class="mu">${E(r.ti)}</div><div class="don" style="background:conic-gradient(var(--ok) 0 ${a}%,var(--bad) ${a}% ${b}%,var(--wn) ${b}% 100%)"><span>${g.ok.length}/${n}</span></div><div class="row sp"><span>🎯 ${at?Math.round(g.ok.length*100/at):0}%</span><span>⏱ ${fm((r.tot||n*60)-r.left)}</span><span>औसत ${Math.round(((r.tot||n*60)-r.left)/n)}s</span></div></div>
+return`<h1>रिज़ल्ट</h1>${X.r.live?(X.rk?`<div class="cd ctr"><b>आपकी रैंक: ${X.rk.rnk} / ${X.rk.total}</b></div>`:'<div class="mu">रैंक सिर्फ़ Live Test में बनती है। यह प्रैक्टिस टेस्ट आपके फ़ोन में सेव है।</div>'):stRankHTML(X.rk)}${X.r.live?`<button class="w" onclick="LB()">लीडरबोर्ड देखें</button>`:''}<div class="cd ctr"><div class="mu">${E(r.ti)}</div><div class="don" style="background:conic-gradient(var(--ok) 0 ${a}%,var(--bad) ${a}% ${b}%,var(--wn) ${b}% 100%)"><span>${g.ok.length}/${n}</span></div><div class="row sp"><span>🎯 ${at?Math.round(g.ok.length*100/at):0}%</span><span>⏱ ${fm((r.tot||n*60)-r.left)}</span><span>औसत ${Math.round(((r.tot||n*60)-r.left)/n)}s</span></div></div>
 <div class="row">${Object.keys(T).map(k=>`<button class="${X.g==k?'p':''}" onclick="X.g='${k}';render()">${T[k]} ${g[k].length}</button>`).join('')}</div>
 <button class="g w" style="margin-top:8px" onclick="pg()">इस समूह का प्रैक्टिस</button>
 ${g[X.g].map(j=>{const q=r.L[j];return`<div class="cd"><b>Q${j+1}</b> ${E(qt(q).slice(0,160))}<div class="mu">${fm(r.qt[j]||0)} · सही: ${'ABCD'[q.a]}. ${E(ot(q,q.a))}${r.ans[j]!=null&&r.ans[j]!=q.a?' · आपका: '+'ABCD'[r.ans[j]]:''}</div>${imgs2(q,false)}<details open><summary>हल</summary>${ex(q)}</details>${adm()&&QI[q.id]?`<button onclick="go('ed',{id:'${q.id}'})">✏ सुधारें</button>`:''}</div>`}).join('')}`}
@@ -224,8 +225,52 @@ const ABOUT_HTML=`<div class="about"><img class="pic" src="img/sandeep-photo.web
 <p>Keep going. Your breakthrough is closer than it feels.</p>
 <p><i>&quot;बहुत मेहनत करना क्योंकि बहुत मेहनत करने से ही हो जाता है&quot;</i></p>
 <div class="sign">With you till the finish line,<br>Sandeep Patel</div></div>`;
+
+const stIsStu=()=>!!(U&&/@student\.mptet$/.test(U.email||''));
+const stSmail=u=>u.toLowerCase()+'@student.mptet';
+function stBox(){
+ if(stIsStu()) return `<div class="cd"><b>छात्र लॉगिन: ${E(U.user_metadata?.username||'')}</b><div class="mu">अब आपके टेस्ट का रैंक दिखेगा।</div><button class="w" onclick="stOut()">लॉगआउट</button></div>`;
+ return `<div class="cd"><b>छात्र लॉगिन / प्रोफ़ाइल</b><div class="mu">बिना लॉगिन के भी टेस्ट दे सकते हैं (रैंक नहीं दिखेगा)। रैंक के लिए लॉगिन करें।</div><input id="su" placeholder="यूज़रनेम (3-20 अक्षर, a-z, 0-9, _)" autocomplete="username"><input id="sp" type="password" placeholder="पासवर्ड (कम से कम 6)" autocomplete="current-password"><input id="sm" type="tel" inputmode="numeric" maxlength="10" placeholder="मोबाइल नंबर (10 अंक, वैकल्पिक)"><div class="row" style="margin-top:8px"><button class="p" onclick="stLogin()">लॉगिन</button><button class="w" onclick="stReg()">नई प्रोफ़ाइल बनाएँ</button></div></div>`;
+}
+async function stReg(){
+ const u=($('#su')?.value||'').trim(), p=$('#sp')?.value||'';
+ if(!/^[a-zA-Z0-9_]{3,20}$/.test(u)) return alert('यूज़रनेम 3-20 अक्षर का हो (केवल a-z, 0-9, _)');
+ if(p.length<6) return alert('पासवर्ड कम से कम 6 अक्षर का हो');
+ const mob=($('#sm')?.value||'').trim();
+ if(mob && !/^[6-9]\d{9}$/.test(mob)) return alert('मोबाइल नंबर 10 अंक का सही भरें (6-9 से शुरू)');
+ const{data,error}=await db.auth.signUp({email:stSmail(u),password:p,options:{data:{username:u}}});
+ if(error) return alert(error.message);
+ const uid=data.user?.id;
+ if(!uid) return alert('प्रोफ़ाइल बन गई, अब लॉगिन करें');
+ const ins=await db.from('profiles').insert({id:uid,display_name:u,username:u,mobile:mob||null});
+ if(ins.error) alert('प्रोफ़ाइल नाम सेव नहीं हुआ: '+ins.error.message);
+ else alert('प्रोफ़ाइल बन गई। अब आपके टेस्ट पर रैंक दिखेगा।');
+}
+async function stLogin(){
+ const u=($('#su')?.value||'').trim(), p=$('#sp')?.value||'';
+ if(!/^[a-zA-Z0-9_]{3,20}$/.test(u)) return alert('यूज़रनेम सही नहीं है');
+ const{error}=await db.auth.signInWithPassword({email:stSmail(u),password:p});
+ if(error) return alert('लॉगिन नहीं हुआ: '+error.message);
+ go(V);
+}
+async function stOut(){await db.auth.signOut();go(V)}
+async function stSave(s,c,w,n){
+ const key=String(s.ty??('t-'+s.ti)); const pct=Math.round(c*1000/n)/10;
+ const ins=await db.from('test_attempts').insert({user_id:U.id,did:P.did,who:U.user_metadata?.username||P.name||'',ty:key,test_name:String(s.ti||key),score:c,correct:c,wrong:w,total:n,percent:pct,secs:(s.tot||n*60)-(s.left||0)});
+ if(ins.error){alert('रिज़ल्ट सेव नहीं हुआ: '+ins.error.message);return null}
+ const me=await db.rpc('my_test_result',{p_ty:key});
+ const tp=await db.rpc('test_leaderboard',{p_ty:key});
+ const m=me.data?.[0];
+ return {rnk:m?.my_rank,total:m?.total_students,pct:m?.my_percentile,best:m?.my_best_percent,top:tp.data||[]};
+}
+function stRankHTML(rk){
+ if(!stIsStu()) return `<div class="cd ctr"><div class="mu">रैंक देखने के लिए प्रोफ़ाइल में छात्र लॉगिन करें। टेस्ट बिना लॉगिन के भी चलता है।</div></div>`;
+ if(!rk||!rk.rnk) return `<div class="cd ctr"><div class="mu">रैंक अभी नहीं बना।</div></div>`;
+ const list=(rk.top||[]).map((t,i)=>`<div class="row"><span>${i+1}. ${E(t.display_name)}${t.is_me?' (आप)':''}</span><span class="cnt">${t.best_percent}% · ${t.percentile} पर्सेंटाइल</span></div>`).join('')||'<div class="mu">अभी और छात्र नहीं</div>';
+ return `<div class="cd ctr"><b>आपकी रैंक: ${rk.rnk} / ${rk.total}</b><div class="mu">आपका स्कोर ${rk.best}% · पर्सेंटाइल ${rk.pct}</div></div><div class="cd"><b>टॉप 10</b>${list}</div>`;
+}
 function pf(){return pfBase()+ABOUT_HTML}
-function pfBase(){return`<h1>प्रोफ़ाइल</h1><div class="cd"><label class="mu">नाम</label><input value="${E(P.name)}" oninput="P.name=this.value;sv()"><div class="row" style="margin-top:8px"><button class="${hi()?'p':''}" onclick="P.lang='hi';sv();render()">हिंदी</button><button class="${hi()?'':'p'}" onclick="P.lang='en';sv();render()">English</button></div></div>${U&&U.email==ADMIN?`<button class="p w" onclick="go('ad')">⚙ Admin पैनल</button>`:''}
+function pfBase(){return`<h1>प्रोफ़ाइल</h1>${stBox()}<div class="cd"><label class="mu">नाम</label><input value="${E(P.name)}" oninput="P.name=this.value;sv()"><div class="row" style="margin-top:8px"><button class="${hi()?'p':''}" onclick="P.lang='hi';sv();render()">हिंदी</button><button class="${hi()?'':'p'}" onclick="P.lang='en';sv();render()">English</button></div></div>${U&&U.email==ADMIN?`<button class="p w" onclick="go('ad')">⚙ Admin पैनल</button>`:''}
 <button class="w" onclick="go('an')">📊 विश्लेषण</button>
 ${U&&U.email==ADMIN?`<button class="w" style="margin-top:8px" onclick="db.auth.signOut()">Admin लॉगआउट</button>`:`<details class="cd"><summary class="mu">Admin लॉगिन</summary><input id="ae" placeholder="Admin email"><input id="ap" type="password" placeholder="पासवर्ड"><button class="p w" onclick="adL()">लॉगिन</button></details>`}
 <button class="w" style="margin-top:8px;border-color:var(--bad);color:var(--bad)" onclick="if(confirm('सारा डेटा हटाएँ?')){localStorage.removeItem('mp5');location.reload()}">Reset Progress</button>${foot()}`}
