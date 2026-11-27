@@ -193,7 +193,7 @@ async function submit(){clearInterval(tk);const s=S;let c=0,w=0;s.L.forEach((q,j
 if(s.ty)P.ts[s.ty]=Math.round(c*100/n);P.hist.unshift({n:s.ti,d:new Date().toLocaleDateString('hi-IN'),c,w,n_:n});P.hist=P.hist.slice(0,30);sv();
 let rk=null;
 if(s.live){
- if(U){rk=await stSave(s,c,w,n,'live-'+s.live)}
+ if(stIsStu()){rk=await stSave(s,c,w,n,'live-'+s.live)}
  else alert('आपका स्कोर सेव नहीं हुआ। Rank देखने के लिए पहले विद्यार्थी Username और Password से लॉगिन करें।');
 }else if(stIsStu()){rk=await stSave(s,c,w,n)}
 go('rs',{r:s,g:'all',rk})}
