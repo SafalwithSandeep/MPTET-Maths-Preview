@@ -332,7 +332,7 @@ const t=await f.text();let D=null,cfg=null,mode='legacy';
 const qi=t.indexOf('const QUESTIONS');
 if(qi>=0){
  const eq=t.indexOf('=',qi);if(eq<0)return alert('QUESTIONS डेटा नहीं मिला');
- try{D=xjson(t,eq+1);const ci=t.indexOf('const CFG');if(ci>=0){const ce=t.indexOf('=',ci);if(ce>=0){const cs=t.indexOf(';',ce),raw=t.slice(ce+1,cs<0?t.length:cs).trim().replace(/([{,]\\s*)([A-Za-z_$][\\w$]*)(\\s*:)/g,'$1"$2"$3');cfg=JSON.parse(raw)}}mode='cbt'}catch(e){return alert('CBT HTML पढ़ने में समस्या: '+e)}
+ try{D=xjson(t,eq+1);const ci=t.indexOf('const CFG');if(ci>=0){const ce=t.indexOf('=',ci);if(ce>=0){const cs=t.indexOf(';',ce),raw=t.slice(ce+1,cs<0?t.length:cs).trim().replace(/([{,]\s*)([A-Za-z_$][\w$]*)(\s*:)/g,'$1"$2"$3');cfg=JSON.parse(raw)}}mode='cbt'}catch(e){return alert('CBT HTML पढ़ने में समस्या: '+e)}
 }else{
  const i=t.indexOf('const ALL =');if(i<0)return alert('यह HTML फ़ॉर्मेट समर्थित नहीं है। const ALL या CFG + QUESTIONS चाहिए।');
  try{D=xjson(t,i+11).DATA}catch(e){return alert(e)}
