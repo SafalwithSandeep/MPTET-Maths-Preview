@@ -192,11 +192,10 @@ function nx(){if(S.i<S.L.length-1)S.i++;else S.pal=1;render()}
 async function submit(){clearInterval(tk);const s=S;let c=0,w=0;s.L.forEach((q,j)=>{if(s.ans[j]==null)return;const ok=s.ans[j]==q.a;ok?c++:w++;rec(q.id,ok)});const n=s.L.length;
 if(s.ty)P.ts[s.ty]=Math.round(c*100/n);P.hist.unshift({n:s.ti,d:new Date().toLocaleDateString('hi-IN'),c,w,n_:n});P.hist=P.hist.slice(0,30);sv();
 let rk=null;
-if(!s.live&&U&&/@student\.mptet$/.test(U.email||'')){rk=await stSave(s,c,w,n)}
-if(s.live){const who=P.name||'विद्यार्थी';
- const ins=await db.from('test_attempts').insert({did:P.did,who,ty:'live-'+s.live,score:c,correct:c,wrong:w,secs:(s.tot||n*60)-s.left});
- if(ins.error)alert('रिज़ल्ट सेव नहीं हुआ: '+ins.error.message);
- const r=await db.rpc('my_rank',{p_ty:'live-'+s.live,p_did:P.did});rk=r.data?.[0]||null}
+if(s.live){
+ if(U){rk=await stSave(s,c,w,n,'live-'+s.live)}
+ else alert('आपका स्कोर सेव नहीं हुआ। Rank देखने के लिए पहले विद्यार्थी Username और Password से लॉगिन करें।');
+}else if(stIsStu()){rk=await stSave(s,c,w,n)}
 go('rs',{r:s,g:'all',rk})}
 function grp(r){const g={all:[],ok:[],no:[],sk:[],sl:[],nr:[]};r.L.forEach((q,j)=>{g.all.push(j);if(r.ans[j]==null)(r.vs[j]?g.sk:g.nr).push(j);else(r.ans[j]==q.a?g.ok:g.no).push(j);if((r.qt[j]||0)>=90)g.sl.push(j)});return g}
 function pg(){const r=X.r,g=grp(r)[X.g];const sel={};g.forEach((j,k)=>{if(r.ans[j]!=null)sel[k]=r.ans[j]});S={m:'pr',L:g.map(j=>r.L[j]),i:0,sel,ti:'समीक्षा',rv:1};go('pl')}
@@ -254,14 +253,17 @@ async function stLogin(){
  go(V);
 }
 async function stOut(){await db.auth.signOut();go(V)}
-async function stSave(s,c,w,n){
- const key=String(s.ty??('t-'+s.ti)); const pct=Math.round(c*1000/n)/10;
- const ins=await db.from('test_attempts').insert({user_id:U.id,did:P.did,who:U.user_metadata?.username||P.name||'',ty:key,test_name:String(s.ti||key),score:c,correct:c,wrong:w,total:n,percent:pct,secs:(s.tot||n*60)-(s.left||0)});
+async function stSave(s,c,w,n,forceKey){
+ const key=String(forceKey||s.ty||('t-'+s.ti)),pct=Math.round(c*1000/n)/10;
+ const who=U?.user_metadata?.username||P.name||'विद्यार्थी';
+ const ins=await db.from('test_attempts').insert({user_id:U.id,did:P.did,who,ty:key,test_name:String(s.ti||key),score:c,correct:c,wrong:w,total:n,percent:pct,secs:Math.max(0,(s.tot||n*60)-(s.left||0))});
  if(ins.error){alert('रिज़ल्ट सेव नहीं हुआ: '+ins.error.message);return null}
- const me=await db.rpc('my_test_result',{p_ty:key});
- const tp=await db.rpc('test_leaderboard',{p_ty:key});
- const m=me.data?.[0];
- return {rnk:m?.my_rank,total:m?.total_students,pct:m?.my_percentile,best:m?.my_best_percent,top:tp.data||[]};
+ const [me,tp]=await Promise.all([db.rpc('my_rank',{p_ty:key,p_did:P.did}),db.rpc('leaderboard',{p_ty:key})]);
+ if(me.error){alert('आपकी Rank नहीं मिल सकी: '+me.error.message);return null}
+ if(tp.error){alert('Leaderboard नहीं खुला: '+tp.error.message);return null}
+ const m=me.data?.[0],total=Number(m?.total||0),best=Number(m?.best||0);
+ const top=(tp.data||[]).map(t=>({display_name:t.player,best_percent:Number(t.pts),percentile:total>1?Math.round((total-1)*100/total):100,is_me:!!t.is_me}));
+ return {rnk:m?.rnk,total,pct:total>1?Math.round((total-(Number(m?.rnk)||total))*100/(total-1)):100,best,top};
 }
 function stRankHTML(rk){
  if(!stIsStu()) return `<div class="cd ctr"><div class="mu">रैंक देखने के लिए प्रोफ़ाइल में छात्र लॉगिन करें। टेस्ट बिना लॉगिन के भी चलता है।</div></div>`;
