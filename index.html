@@ -326,15 +326,54 @@ async function renT(){const id=$('#tts').value,n=$('#ttn').value.trim();if(!n)re
 async function hideT(){const id=$('#tts').value;if(!confirm('यह topic हटाएँ?'))return;const{error}=await db.from('type_overrides').upsert({id,hidden:true});if(error)return alert(error.message);alert('हट गया');await loadAll()}
 function xjson(t,i){let s=t.indexOf('{',i),d=0,q=false,e=false;for(let k=s;k<t.length;k++){const c=t[k];if(q){if(e)e=false;else if(c=='\\')e=true;else if(c=='"')q=false;continue}if(c=='"')q=true;else if(c=='{'||c=='[')d++;else if(c=='}'||c==']'){d--;if(d==0)return JSON.parse(t.slice(s,k+1))}}throw'JSON नहीं मिला'}
 function txt(h){const d=document.createElement('div');d.innerHTML=h||'';return d.textContent.trim()}
-async function impH(){const f=$('#hf').files[0];if(!f)return alert('फ़ाइल चुनें');const t=await f.text();const i=t.indexOf('const ALL =');if(i<0)return alert('यह सही फ़ाइल नहीं है');
-let D;try{D=xjson(t,i+11).DATA}catch(e){return alert(e)}if(!Array.isArray(D)||!D.length)return alert('प्रश्न नहीं मिले');
-const ty=$('#hty').value;const rows=[];let bad=0;
-for(const q of D){const o=(q.opts||[]).map(x=>[txt(x[1]),txt(x[2]||x[1])]);const a='ABCD'.indexOf(String(q.ans||'').toUpperCase());
+async function impH(){
+const f=$('#hf').files[0];if(!f)return alert('फ़ाइल चुनें');
+const t=await f.text();let D=null,cfg=null,mode='legacy';
+const qi=t.indexOf('const QUESTIONS');
+if(qi>=0){
+ const eq=t.indexOf('=',qi);if(eq<0)return alert('QUESTIONS डेटा नहीं मिला');
+ try{D=xjson(t,eq+1);const ci=t.indexOf('const CFG');if(ci>=0){const ce=t.indexOf('=',ci);if(ce>=0)cfg=xjson(t,ce+1)}mode='cbt'}catch(e){return alert('CBT HTML पढ़ने में समस्या: '+e)}
+}else{
+ const i=t.indexOf('const ALL =');if(i<0)return alert('यह HTML फ़ॉर्मेट समर्थित नहीं है। const ALL या CFG + QUESTIONS चाहिए।');
+ try{D=xjson(t,i+11).DATA}catch(e){return alert(e)}
+}
+if(!Array.isArray(D)||!D.length)return alert('प्रश्न नहीं मिले');
+if(mode==='cbt'){
+ const name=String((cfg&&cfg.title)||f.name.replace(/\.html?$/i,'')).trim();
+ const mins=Math.max(1,Math.min(300,Number(cfg&&cfg.minutes)||D.length));
+ if(!confirm(name+' को '+D.length+' प्रश्न और '+mins+' मिनट के Live Test के रूप में जोड़ें?'))return;
+ const letters=[['A','A'],['B','B'],['C','C'],['D','D']],qs=[];
+ for(let k=0;k<D.length;k++){
+  const q=D[k],uri=q&&q.q,ans=Number(q&&q.ans);
+  if(typeof uri!=='string'||!/^data:image\/(png|jpeg|jpg|webp);base64,/i.test(uri)||!Number.isInteger(ans)||ans<0||ans>3)return alert('प्रश्न '+(k+1)+' का चित्र या सही उत्तर फ़ॉर्मेट सही नहीं है। कोई टेस्ट सेव नहीं किया गया।');
+  let blob;try{blob=await(await fetch(uri)).blob()}catch(e){return alert('प्रश्न '+(k+1)+' का चित्र पढ़ा नहीं जा सका।')}
+  const ext=blob.type.includes('png')?'png':blob.type.includes('jpeg')||blob.type.includes('jpg')?'jpg':'webp';
+  const path='live-html-'+Date.now()+'-'+k+'.'+ext;
+  const up=await db.storage.from('qimg').upload(path,blob,{contentType:blob.type||'image/webp'});
+  if(up.error)return alert('प्रश्न '+(k+1)+' की फ़ोटो अपलोड नहीं हुई: '+up.error.message);
+  const url=db.storage.from('qimg').getPublicUrl(path).data.publicUrl;
+  qs.push({q:'',h:'',o:letters,a:ans,img:url,e:[],f:[],src:'HTML CBT · '+(cfg&&cfg.shift?String(cfg.shift):f.name)});
+ }
+ const insr=await db.from('live_tests').insert([{name,mins,qs}]);
+ if(insr.error)return alert('चित्र अपलोड हो गए, लेकिन Live Test सेव नहीं हुआ: '+insr.error.message);
+ alert('सफलता! '+qs.length+' प्रश्नों का Live Test जुड़ गया। विद्यार्थी Live Test में इसे दे सकेंगे।');
+ await loadAll();go('ad');return;
+}
+const ty=$('#hty').value,rows=[];let bad=0;
+for(const q of D){
+ const o=(q.opts||[]).map(x=>[txt(x[1]),txt(x[2]||x[1])]),a='ABCD'.indexOf(String(q.ans||'').toUpperCase());
  if(o.length<2||!(a>=0)){bad++;continue}
- const imgsU=[];for(const uri of (q.img||[])){const b=await (await fetch(uri)).blob();const path='hm-'+Date.now()+'-'+Math.random().toString(36).slice(2)+'.jpg';const up=await db.storage.from('qimg').upload(path,b,{contentType:'image/jpeg'});if(!up.error)imgsU.push(db.storage.from('qimg').getPublicUrl(path).data.publicUrl)}
- rows.push({ty,data:{q:txt(q.stem),h:txt(q.stemHi)||txt(q.stem),o,a,e:(q.sol||[]),f:(q.facts||[]),src:'HTML '+(q.date||'')+(q.shift?' '+q.shift:''),imgs:imgsU}})}
+ const imgsU=[];
+ for(const uri of(q.img||[])){
+  const b=await(await fetch(uri)).blob(),ext=b.type.includes('png')?'png':b.type.includes('webp')?'webp':'jpg',path='hm-'+Date.now()+'-'+Math.random().toString(36).slice(2)+'.'+ext;
+  const up=await db.storage.from('qimg').upload(path,b,{contentType:b.type||'image/jpeg'});
+  if(!up.error)imgsU.push(db.storage.from('qimg').getPublicUrl(path).data.publicUrl);
+ }
+ rows.push({ty,data:{q:txt(q.stem),h:txt(q.stemHi)||txt(q.stem),o,a,e:(q.sol||[]),f:(q.facts||[]),src:'HTML '+(q.date||'')+(q.shift?' '+q.shift:''),imgs:imgsU}});
+}
 for(let k=0;k<rows.length;k+=50){const{error}=await db.from('custom_questions').insert(rows.slice(k,k+50));if(error)return alert(error.message)}
-alert(rows.length+' प्रश्न जुड़े'+(bad?' ('+bad+' छोड़े गए)':''));loadAll()}
+alert(rows.length+' प्रश्न जुड़े'+(bad?' ('+bad+' छोड़े गए)':''));loadAll()
+}
 function tsv(t){t=t.trim();if(t[0]=='['||t[0]=='{'){let j=JSON.parse(t);if(!Array.isArray(j))j=j.questions||[j];return j.map(nq)}return t.split('\n').map(l=>l.trim()).filter(Boolean).map((l,i)=>{const c=l.split('\t');if(c.length<6)throw'लाइन '+(i+1)+': कम से कम 6 कॉलम चाहिए (प्रश्न, A, B, C, D, सही, हल)';return nq({q:c[0],o:c.slice(1,5),a:c[5],e:c[6]},i)})}
 async function fl2(inp,id){const f=inp.files[0];if(!f)return;let t;if(/\.xlsx?$/i.test(f.name)){const wb=XLSX.read(await f.arrayBuffer());t=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''}).map(r=>r.join('\t')).join('\n')}else{t=await f.text();if(/\.csv$/i.test(f.name))t=t.split('\n').map(l=>l.replace(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/g,'\t').replace(/"/g,'')).join('\n')}$('#'+id).value=t}
 const adm=()=>U&&U.email==ADMIN;
@@ -352,7 +391,7 @@ if(r.error)return alert(r.error.message);Object.assign(q,d);alert('सेव ह
 async function hideQ(){const q=QI[X.id];if(!confirm('यह प्रश्न सबको दिखना बंद हो जाएगा। ठीक है?'))return;const r=q.rid?await db.from('custom_questions').delete().eq('id',q.rid):await db.from('q_overrides').upsert({id:q.id,data:{del:true}});if(r.error)return alert(r.error.message);await loadAll();go(X.bk||'pr')}
 function ad(){return`<h1>⚙ Admin पैनल</h1>
 <div class="cd" style="--c:#f59e0b"><b>📚 PYQ जोड़ें (MPESB All PYQ)</b><div class="mu">Exam का नाम लिखें (नया हो तो नया exam बनेगा), topic का नाम किताब के index जैसा लिखें। प्रश्न वही format (Excel paste / JSON / .xlsx) में।</div><input id="pyE" placeholder="Exam नाम, जैसे MPESB Varg 2 PRE 2026"><input id="pyT" placeholder="Topic नाम, जैसे संख्या पद्धति"><input type="file" accept=".json,.csv,.tsv,.txt,.xlsx" onchange="fl2(this,'pyD')"><textarea id="pyD" placeholder="प्रश्न यहाँ paste करें"></textarea><button class="p w" onclick="savePyq()">PYQ सेव करें</button></div>
-<div class="cd" style="--c:#0ea5e9"><b>📥 HTML फ़ाइल से टेस्ट जोड़ें</b><div class="mu">ऐसी HTML फ़ाइल चुनें जिसमें "const ALL =" वाला डेटा हो। सभी प्रश्न नीचे चुने गए topic में जुड़ेंगे।</div><input type="file" id="hf" accept=".html,.htm"><select id="hty">${tyOpts()}</select><button class="p w" onclick="impH()">HTML से जोड़ें</button></div>
+<div class="cd" style="--c:#0ea5e9"><b>📥 HTML फ़ाइल से टेस्ट जोड़ें</b><div class="mu">पुरानी ALL/DATA HTML फ़ाइलें चुने गए topic में जुड़ेंगी। CFG + QUESTIONS वाली CBT फ़ाइल Live Test बनेगी; उसके प्रश्न चित्रों और Answer Key सहित अपलोड होंगे।</div><input type="file" id="hf" accept=".html,.htm"><select id="hty">${tyOpts()}</select><button class="p w" onclick="impH()">HTML से जोड़ें</button></div>
 <div class="cd" style="--c:#14b8a6"><b>✏ Topic का नाम बदलें / हटाएँ</b><select id="tts">${AS().flatMap(c=>c.types.map(t=>`<option value="${t.id}">${E(lg(c)+nm(c))} › ${E(nm(t))}</option>`)).join('')}</select><input id="ttn" placeholder="नया नाम (खाली हो तो नहीं बदलेगा)"><div class="row"><button class="p" onclick="renT()">नाम बदलें</button><button onclick="hideT()" style="border-color:var(--bad);color:var(--bad)">हटाएँ</button></div><div class="mu">हटाने से topic सबको दिखना बंद होगा। प्रश्न डेटा में रहेंगे।</div></div><button class="w" onclick="loadST()">👥 Students और रिज़ल्ट</button><button class="w" style="margin-top:8px" onclick="loadFL()">🔎 जाँच सूची (संदिग्ध हल / फ़ोटो चाहिए)</button>
 <div class="cd" style="--c:#6366f1"><b>➕ प्रश्न जोड़ें (Excel से paste)</b><div class="mu">हर लाइन: प्रश्न ⇥ A ⇥ B ⇥ C ⇥ D ⇥ सही(A-D) ⇥ हल। Excel कॉपी-paste करें, या .json / .xlsx / .csv फ़ाइल चुनें (पहली लाइन में heading न रखें)। JSON: [{"q":"..","o":[4 विकल्प],"a":0 या "A","e":"हल"}]। PDF सीधे नहीं पढ़ी जाती: PDF Claude को भेजें, वह JSON बना देगा।</div><select id="aty">${tyOpts()}</select><input type="file" accept=".json,.csv,.tsv,.txt,.xlsx" onchange="fl2(this,'aq')"><textarea id="aq"></textarea><button class="p w" onclick="addQ()">सेव करें</button></div>
 <div class="cd" style="--c:#ec4899"><b>📂 नया Topic / Subtopic</b><select id="ase">${AS().map(c=>`<option value="${c.id}">${E(lg(c)+nm(c))}</option>`).join('')}</select><input id="atn" placeholder="नाम (जैसे Type IV : Word Problems)"><button class="p w" onclick="addT()">जोड़ें</button></div>
