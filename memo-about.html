@@ -1,0 +1,111 @@
+<style>
+/* ===== PREVIEW ONLY (apni site mein ye 2 lines copy NA karein) ===== */
+:root{--bg:#0F1117;--mu:#9CA3AF}
+:root[data-theme="light"]{--bg:#f4f6fb;--mu:#5b6478}
+body{margin:0;background:var(--bg);padding:14px;font-family:system-ui,sans-serif}
+.tgl{position:fixed;top:10px;right:10px;z-index:9;padding:8px 12px;border-radius:10px;border:1px solid #888;background:#fff3;color:#888}
+
+/* ===================================================================
+   COPY FROM HERE  →  purane ".memo-..." wale poore CSS ki jagah paste
+   =================================================================== */
+.memo-ui{
+  --m-card:#131A26; --m-bd:#222D40; --m-in:#0E141E; --m-th:#182234;
+  --m-h:#F8FAFC; --m-sub:#E2E8F0; --m-body:#A9B6C9; --m-strong:#F1F5F9; --m-mu:#7C8BA1;
+  --m-blue:#93C5FD; --m-green:#6EE7B7; --m-amber:#FBBF24; --m-accent:#6366F1; --m-link:#60A5FA;
+  --m-shadow:0 10px 28px rgba(0,0,0,.35);
+  max-width:720px;margin:18px auto 10px;
+  font-family:'Inter','Noto Sans Devanagari',system-ui,-apple-system,sans-serif;
+  font-feature-settings:'liga','kern';text-rendering:optimizeLegibility;
+  color:var(--m-body);-webkit-font-smoothing:antialiased;
+}
+:root[data-theme="light"] .memo-ui{
+  --m-card:#ffffff; --m-bd:#dde3ee; --m-in:#f8fafc; --m-th:#eef2ff;
+  --m-h:#0f172a; --m-sub:#334155; --m-body:#475569; --m-strong:#0f172a; --m-mu:#64748b;
+  --m-blue:#1d4ed8; --m-green:#047857; --m-amber:#b45309; --m-accent:#4f46e5; --m-link:#2563eb;
+  --m-shadow:0 6px 20px rgba(20,33,61,.08);
+}
+.memo-ui *{box-sizing:border-box}
+
+/* ---------- cards ---------- */
+.memo-card{background:var(--m-card);border:1px solid var(--m-bd);border-radius:18px;padding:22px 16px;margin-bottom:16px;box-shadow:var(--m-shadow)}
+.memo-story{border-left:4px solid var(--m-accent)}
+
+/* ---------- hero ---------- */
+.memo-hero{text-align:center}
+.memo-avatar{width:104px;height:104px;margin:0 auto 14px;border-radius:50%;padding:3px;background:linear-gradient(135deg,#6366F1,#EC4899);box-shadow:0 0 26px rgba(99,102,241,.35)}
+.memo-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;background:#0B0F17}
+.memo-kicker{font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--m-mu);margin:0 0 6px}
+.memo-title-lg{font-size:28px;font-weight:800;color:var(--m-h);margin:0 0 4px;line-height:1.2}
+.memo-subtitle{font-size:14px;font-weight:600;color:var(--m-sub);margin:0 0 12px}
+.memo-text{font-size:14.5px;line-height:1.9;letter-spacing:.1px;color:var(--m-body);margin:0 0 14px}
+.memo-text strong{color:var(--m-strong);font-weight:700;letter-spacing:0}
+.memo-text em{font-style:normal;font-weight:600;color:var(--m-link)}
+
+.memo-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0 4px}
+.memo-stat{background:var(--m-in);border:1px solid var(--m-bd);border-radius:12px;padding:10px 4px;text-align:center;font-size:11px;font-weight:600;color:var(--m-mu);line-height:1.3}
+.memo-stat b{display:block;font-size:21px;font-weight:800;font-variant-numeric:tabular-nums;margin-bottom:2px}
+.memo-stat.s1 b{color:var(--m-amber)}
+.memo-stat.s2 b{color:var(--m-blue)}
+.memo-stat.s3 b{color:var(--m-green)}
+
+.memo-pills{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:14px}
+.memo-pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:6px 12px;border-radius:999px;background:var(--m-in);border:1px solid var(--m-bd);color:var(--m-sub);text-decoration:none}
+.memo-pill.blue{background:rgba(59,130,246,.14);border-color:rgba(59,130,246,.38);color:var(--m-blue)}
+.memo-pill.green{background:rgba(16,185,129,.14);border-color:rgba(16,185,129,.38);color:var(--m-green)}
+
+/* ---------- story ---------- */
+.memo-title-md{font-size:22px;font-weight:800;color:var(--m-h);margin:0 0 14px}
+.memo-hl{background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);border-radius:12px;padding:12px 14px;margin:0 0 14px;font-size:14px;line-height:1.7;color:var(--m-sub)}
+.memo-hl strong{color:var(--m-strong)}
+
+/* ---------- topic table ---------- */
+.memo-sec-title{margin:24px 0 8px}
+.memo-table-wrap{border:1px solid var(--m-bd);border-radius:14px;background:var(--m-in);overflow:hidden}
+.memo-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px;color:var(--m-sub)}
+.memo-table th{background:var(--m-th);color:var(--m-h);font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;padding:10px 4px;text-align:center;border-bottom:1px solid var(--m-bd)}
+.memo-table th:first-child{text-align:left;padding-left:12px}
+.memo-table td{padding:10px 4px;border-bottom:1px solid var(--m-bd);vertical-align:middle;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.memo-table td:first-child{text-align:left;padding-left:12px;padding-right:6px;font-weight:500}
+.memo-table tr:last-child td{border-bottom:none}
+.tn{display:block;font-size:13.5px;font-weight:600;color:var(--m-strong);line-height:1.35}
+.te{display:block;font-size:11.5px;color:var(--m-mu);line-height:1.35;margin-top:1px}
+.mbar{height:4px;border-radius:9px;background:var(--m-green);overflow:hidden;margin-top:7px;opacity:.9}
+.mbar i{display:block;height:100%;background:var(--m-blue)}
+.memo-table td.num{color:var(--m-blue)}
+.memo-table td.pyq-num{color:var(--m-green)}
+.memo-table td.tot-num{color:var(--m-amber)}
+.memo-table tr.total-row td{background:var(--m-th);font-weight:800;font-size:14px;color:var(--m-h);border-top:1px solid var(--m-bd)}
+.memo-table tr.total-row td.num{color:var(--m-blue)}
+.memo-table tr.total-row td.pyq-num{color:var(--m-green)}
+.memo-table tr.total-row td.tot-num{color:var(--m-amber)}
+.memo-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:var(--m-mu);margin:8px 2px 0}
+.memo-legend span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;background:var(--m-blue)}
+.memo-legend span+span::before{background:var(--m-green)}
+
+/* ---------- syllabus mapping table ---------- */
+.memo-map-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px;color:var(--m-sub)}
+.memo-map-table th{background:var(--m-th);color:var(--m-h);font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;padding:10px 12px;text-align:left;border-bottom:1px solid var(--m-bd)}
+.memo-map-table th:first-child{width:52%}
+.memo-map-table td{padding:11px 12px;border-bottom:1px solid var(--m-bd);vertical-align:top;line-height:1.55;font-weight:500;word-wrap:break-word}
+.memo-map-table tr:last-child td{border-bottom:none}
+.memo-map-table tbody tr:nth-child(even) td{background:rgba(127,140,165,.06)}
+.memo-map-table td:first-child{color:var(--m-strong);font-weight:600;border-right:1px solid var(--m-bd)}
+.memo-map-table td:first-child small{display:block;font-size:11.5px;font-weight:500;color:var(--m-mu);margin-top:2px}
+.memo-map-table td:last-child{color:var(--m-green);font-weight:600}
+.soon-pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.38);color:var(--m-amber)}
+
+/* ---------- sign-off ---------- */
+.memo-closing{margin-top:22px;padding:14px;border-radius:12px;background:var(--m-in);border:1px solid var(--m-bd)}
+.memo-closing .memo-text{margin:0;font-size:14px}
+.memo-signoff{margin-top:18px;padding-top:14px;border-top:1px solid var(--m-bd)}
+.memo-signoff span{display:block;font-size:13px;color:var(--m-mu);margin-bottom:3px}
+.memo-signoff strong{font-size:19px;font-weight:800;color:var(--m-link)}
+
+@media (max-width:380px){
+  .memo-card{padding:18px 12px}
+  .memo-title-lg{font-size:25px}
+  .tn{font-size:13px}
+}
+/* ================= COPY TILL HERE (CSS) ================= */
+</style>
+<div class="memo-about"><div class="memo-ui"> ... </div></div>
