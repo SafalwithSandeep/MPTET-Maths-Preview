@@ -322,7 +322,7 @@ const CSR=await db.from('custom_sections').select('*');const CSM={};(CSR.data||[
 [...vsec(1),...vsec(2),...SY.extra.sections].forEach(c=>c.types.forEach(t=>TY[t.id]={t,c}));
 (ov.data||[]).forEach(r=>{const q=QI[r.id];if(!q)return;if(r.data.del){BY[q.ty]=BY[q.ty].filter(x=>x!==q);delete QI[q.id]}else Object.assign(q,r.data)});NTA=(cn.data||[]).filter(n=>TY[n.ty]);NTA.forEach(n=>(NT[n.ty]=NT[n.ty]||[]).push(n));AR=(cu.data||[]).slice().sort((a,b)=>b.id-a.id).slice(0,15).map(r=>({rid:r.id,q:r.data.q||''}));const htr=await db.from('html_tests').select('*').eq('active',true).order('created_at',{ascending:false});if(htr.error)throw htr.error;HTMLT=htr.data||[];if(U&&U.email!==ADMIN){const pr=await db.from('profiles').select('*').eq('id',U.id).maybeSingle();if(pr.error)throw pr.error;PROFILE=pr.data||null;if(PROFILE){P.name=PROFILE.display_name;sv()}else V='pf'}else PROFILE=null;go(V=='ad'?'ad':(U&&!PROFILE?'pf':'home'))}catch(e){$('#m').innerHTML='<div class="cd">डेटा लोड नहीं हुआ: '+E(e.message)+'</div>'}}
 async function gl(){const{error}=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(error)alert(error.message)}
-async function LB(){if(!stIsStu())return alert('लीडरबोर्ड देखने के लिए विद्यार्थी Username और Password से लॉगिन करें।');const{data,error}=await db.rpc('leaderboard',{p_ty:'live-'+X.r.live});if(error)return alert(error.message);
+async function LB(){if(!stIsStu())return alert('लीडरबोर्ड देखने के लिए Google Login और Profile पूरी करें।');const key=X.r.htmlId?'html-'+X.r.htmlId:'live-'+X.r.live;const{data,error}=await db.rpc('leaderboard',{p_ty:key});if(error)return alert(error.message);
 const L=data||[];$('#m').innerHTML=`<h1>लीडरबोर्ड</h1><div class="mu">${E(X.r.ti)} · टॉप 20 (हर विद्यार्थी का बेहतरीन स्कोर)</div><div class="cd"><table style="width:100%;font-size:15px">${L.map((a,k)=>`<tr><td>${k+1}</td><td>${E(a.player)}</td><td>${a.pts}</td></tr>`).join('')||'<tr><td>अभी कोई नहीं</td></tr>'}</table></div><button class="w" onclick="go('rs',X)">← परिणाम</button>`}
 async function saveQ(){let a;try{a=JSON.parse($('#aj').value)}catch(e){return alert('JSON सही नहीं है')}
 if(!Array.isArray(a)||a.some(q=>!q.ty||!TY[q.ty]||!q.q||!Array.isArray(q.o)||q.o.length<2||!(q.a>=0&&q.a<q.o.length)))return alert('हर प्रश्न में सही ty (type id), q, o, a चाहिए');
@@ -386,14 +386,21 @@ async function startHTMLTest(id){
  $('#htmlExamClose').onclick=()=>{if(confirm('टेस्ट बंद करें? आपका Result submit नहीं होगा।')){layer.remove();HTML_FRAME=null;HTML_ACTIVE=null}};
 }
 async function receiveHTMLResult(d){
- const t=HTML_ACTIVE;if(!t||!HTML_FRAME)return;
+ const t=HTML_ACTIVE;if(!t||!HTML_FRAME||t.submitted)return;t.submitted=true;
  const total=Number(d.total),correct=Number(d.correct),wrong=Number(d.wrong),seconds=Number(d.seconds);
  if(!Number.isInteger(total)||total<1||total>300||!Number.isInteger(correct)||!Number.isInteger(wrong)||correct<0||wrong<0||correct+wrong>total||!Number.isFinite(seconds)||seconds<0)return;
  const fake={ti:t.name,tot:seconds,left:0};
  const rk=await stSave(fake,correct,wrong,total,'html-'+t.id);
  const banner=document.createElement('div');banner.style.cssText='background:#064e3b;color:#fff;padding:10px;border-radius:8px;margin:4px 0;font:14px system-ui';
  banner.textContent=rk&&rk.rnk?'Supabase में Result सेव हो गया · Rank '+rk.rnk+' / '+rk.total:'Result भेजा गया। Rank details अभी उपलब्ध नहीं हैं।';
+ const btn=document.createElement('button');btn.textContent='Supabase Leaderboard देखें';btn.style.cssText='margin-left:10px;padding:6px 10px;border-radius:6px;border:1px solid #fff;background:#065f46;color:#fff';btn.onclick=function(){showHTMLLeaderboard(t.id)};banner.appendChild(btn);
  const layer=document.getElementById('htmlExamLayer');if(layer)layer.insertBefore(banner,layer.children[1]);
+}
+async function showHTMLLeaderboard(id){
+ const r=await db.rpc('leaderboard',{p_ty:'html-'+id});if(r.error)return alert('Leaderboard नहीं खुला: '+r.error.message);
+ const layer=document.getElementById('htmlExamLayer');if(!layer)return;
+ let panel=document.getElementById('htmlRankPanel');if(panel)panel.remove();panel=document.createElement('div');panel.id='htmlRankPanel';panel.style.cssText='background:#fff;color:#111;padding:10px;border-radius:8px;margin:4px 0;max-height:180px;overflow:auto;font:14px system-ui';
+ const rows=r.data||[];panel.innerHTML='<b>Supabase Leaderboard · Top 20</b>'+(rows.length?rows.map((x,i)=>'<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #ddd"><span>'+(i+1)+'. '+E(x.player)+'</span><b>'+E(x.pts)+'%</b></div>').join(''):'<p>अभी कोई Result नहीं</p>');layer.insertBefore(panel,layer.children[1]);
 }
 window.addEventListener('message',function(ev){
  if(!HTML_FRAME||ev.source!==HTML_FRAME.contentWindow||!ev.data||ev.data.type!=='memo-test-result')return;
