@@ -195,7 +195,7 @@ if(s.ty)P.ts[s.ty]=Math.round(c*100/n);P.hist.unshift({n:s.ti,d:new Date().toLoc
 let rk=null;
 if(s.live){
  if(stIsStu()){rk=await stSave(s,c,w,n,'live-'+s.live)}
- else alert('आपका स्कोर सेव नहीं हुआ। Rank देखने के लिए पहले विद्यार्थी Username और Password से लॉगिन करें।');
+ else alert('आपका स्कोर सेव नहीं हुआ। Rank देखने के लिए Google से लॉगिन करें और प्रोफ़ाइल पूरी करें।');
 }else if(stIsStu()){rk=await stSave(s,c,w,n)}
 go('rs',{r:s,g:'all',rk})}
 function grp(r){const g={all:[],ok:[],no:[],sk:[],sl:[],nr:[]};r.L.forEach((q,j)=>{g.all.push(j);if(r.ans[j]==null)(r.vs[j]?g.sk:g.nr).push(j);else(r.ans[j]==q.a?g.ok:g.no).push(j);if((r.qt[j]||0)>=90)g.sl.push(j)});return g}
@@ -227,11 +227,10 @@ const ABOUT_HTML=`<div class="about"><img class="pic" src="img/sandeep-photo.web
 <div class="sign">With you till the finish line,<br>Sandeep Patel</div></div>`;
 
 const stIsStu=()=>!!(U&&PROFILE&&U.email!==ADMIN);
-const stSmail=u=>u.toLowerCase()+'@student.mptet';
 function stBox(){
- if(stIsStu())return '<div class="cd"><b>नमस्ते, '+E(PROFILE.display_name)+'</b><div class="mu">आपकी प्रोफ़ाइल और टेस्ट रिकॉर्ड सुरक्षित हैं।</div><div class="mu">मोबाइल: '+E(PROFILE.mobile||'—')+'</div><button class="w" onclick="stOut()">लॉगआउट</button></div>';
- if(U&&!PROFILE)return '<div class="cd"><b>पहली बार प्रोफ़ाइल पूरी करें</b><div class="mu">नाम और मोबाइल नंबर केवल पहली बार माँगे जाएँगे। अगली बार Google Login पर Database आपका रिकॉर्ड पहचान लेगा।</div><input id="prname" maxlength="40" placeholder="पूरा नाम"><input id="prmobile" type="tel" inputmode="numeric" maxlength="10" placeholder="10 अंकों का मोबाइल नंबर"><button class="p w" style="margin-top:8px" onclick="saveStudentProfile()">प्रोफ़ाइल सेव करें</button></div>';
- return '<div class="cd"><b>छात्र Login / Registration</b><div class="mu">Google से एक बार Login करें। पहली बार नाम और मोबाइल नंबर भरें; बाद में दोबारा नहीं पूछे जाएँगे।</div><button class="p w" onclick="gl()">Google से Login करें</button><details style="margin-top:10px"><summary class="mu">पुराने Username Login</summary><input id="su" placeholder="पुराना यूज़रनेम"><input id="sp" type="password" placeholder="पासवर्ड"><button class="w" onclick="stLogin()">पुराना Login</button></details></div>';
+ if(stIsStu())return '<div class="cd"><b>नमस्ते, '+E(PROFILE.display_name)+'</b><div class="mu">आपकी Google प्रोफ़ाइल और टेस्ट रिकॉर्ड सुरक्षित हैं।</div><div class="mu">ईमेल: '+E(U.email||'—')+'</div><div class="mu">मोबाइल: '+E(PROFILE.mobile||'—')+'</div><button class="w" onclick="stOut()">लॉगआउट</button></div>';
+ if(U&&!PROFILE){const googleName=E(U.user_metadata?.full_name||U.user_metadata?.name||'');return '<div class="cd"><b>पहली बार प्रोफ़ाइल पूरी करें</b><div class="mu">Google से ईमेल अपने-आप मिलेगा। नाम पहले से भरा है; जाँच लें और मोबाइल नंबर भरें। ये जानकारी केवल पहली बार माँगी जाएगी।</div><label>पूरा नाम</label><input id="prname" maxlength="40" value="'+googleName+'" placeholder="पूरा नाम"><label>मोबाइल नंबर</label><input id="prmobile" type="tel" inputmode="numeric" maxlength="10" placeholder="10 अंकों का मोबाइल नंबर"><button class="p w" style="margin-top:8px" onclick="saveStudentProfile()">प्रोफ़ाइल सेव करें</button></div>';}
+ return '<div class="cd"><b>विद्यार्थी लॉगिन</b><div class="mu">टेस्ट देने और अपनी रैंक सुरक्षित रखने के लिए Google अकाउंट से लॉगिन करें।</div><button class="p w" onclick="gl()">Google से Login करें</button></div>';
 }
 async function saveStudentProfile(){
  const name=(($('#prname')||{}).value||'').trim(),mobile=(($('#prmobile')||{}).value||'').trim();
@@ -241,27 +240,6 @@ async function saveStudentProfile(){
  const r=await db.from('profiles').upsert({id:U.id,display_name:name,mobile:mobile},{onConflict:'id'}).select().single();
  if(r.error)return alert('प्रोफ़ाइल सेव नहीं हुई: '+r.error.message);
  PROFILE=r.data;P.name=name;sv();alert('प्रोफ़ाइल सेव हो गई। अगली बार नाम और मोबाइल दोबारा नहीं पूछे जाएँगे।');go('home');
-}
-async function stReg(){
- const u=($('#su')?.value||'').trim(), p=$('#sp')?.value||'';
- if(!/^[a-zA-Z0-9_]{3,20}$/.test(u)) return alert('यूज़रनेम 3-20 अक्षर का हो (केवल a-z, 0-9, _)');
- if(p.length<6) return alert('पासवर्ड कम से कम 6 अक्षर का हो');
- const mob=($('#sm')?.value||'').trim();
- if(mob && !/^[6-9]\d{9}$/.test(mob)) return alert('मोबाइल नंबर 10 अंक का सही भरें (6-9 से शुरू)');
- const{data,error}=await db.auth.signUp({email:stSmail(u),password:p,options:{data:{username:u}}});
- if(error) return alert(error.message);
- const uid=data.user?.id;
- if(!uid) return alert('प्रोफ़ाइल बन गई, अब लॉगिन करें');
- const ins=await db.from('profiles').insert({id:uid,display_name:u,username:u,mobile:mob||null});
- if(ins.error) alert('प्रोफ़ाइल नाम सेव नहीं हुआ: '+ins.error.message);
- else alert('प्रोफ़ाइल बन गई। अब आपके टेस्ट पर रैंक दिखेगा।');
-}
-async function stLogin(){
- const u=($('#su')?.value||'').trim(), p=$('#sp')?.value||'';
- if(!/^[a-zA-Z0-9_]{3,20}$/.test(u)) return alert('यूज़रनेम सही नहीं है');
- const{error}=await db.auth.signInWithPassword({email:stSmail(u),password:p});
- if(error) return alert('लॉगिन नहीं हुआ: '+error.message);
- go(V);
 }
 async function stOut(){await db.auth.signOut();PROFILE=null;go('home')}
 async function stSave(s,c,w,n,forceKey){
@@ -277,7 +255,7 @@ async function stSave(s,c,w,n,forceKey){
  return {rnk:m?.rnk,total,pct:total>1?Math.round((total-(Number(m?.rnk)||total))*100/(total-1)):100,best,top};
 }
 function stRankHTML(rk){
- if(!stIsStu()) return `<div class="cd ctr"><div class="mu">रैंक देखने के लिए प्रोफ़ाइल में छात्र लॉगिन करें। टेस्ट बिना लॉगिन के भी चलता है।</div></div>`;
+ if(!stIsStu()) return `<div class="cd ctr"><div class="mu">रैंक देखने के लिए Google से लॉगिन करें और प्रोफ़ाइल पूरी करें।</div></div>`;
  if(!rk||!rk.rnk) return `<div class="cd ctr"><div class="mu">रैंक अभी नहीं बना।</div></div>`;
  const list=(rk.top||[]).map((t,i)=>`<div class="row"><span>${i+1}. ${E(t.display_name)}${t.is_me?' (आप)':''}</span><span class="cnt">${t.best_percent}% · ${t.percentile} पर्सेंटाइल</span></div>`).join('')||'<div class="mu">अभी और छात्र नहीं</div>';
  return `<div class="cd ctr"><b>आपकी रैंक: ${rk.rnk} / ${rk.total}</b><div class="mu">आपका स्कोर ${rk.best}% · पर्सेंटाइल ${rk.pct}</div></div><div class="cd"><b>टॉप 10</b>${list}</div>`;
